@@ -1,0 +1,34 @@
+---
+- name: Custom facts → conditional roles
+  hosts: all
+  become: true
+  tasks:
+    - name: Gather custom facts
+      ansible.builtin.setup:
+        filter: ansible_facts['os_family']
+
+    - name: Set custom fact based on disk size
+      ansible.builtin.set_fact:
+        large_disk: true
+      when: ansible_facts.devices.vda.size | int > 50 * 1024**3  # >50GB
+
+    - name: Set custom fact based on memory
+      ansible.builtin.set_fact:
+        high_memory: true
+      when: ansible_facts.memtotal_mb | int > 4096  # >4GB RAM
+
+    - name: Include web role when conditions match
+      ansible.builtin.include_role:
+        name: web
+      when:
+        - ansible_facts.os_family == 'RedHat'
+        - high_memory | default(false)
+        - "'webservers' in group_names"
+
+    - name: Include db role when conditions match
+      ansible.builtin.include_role:
+        name: db
+      when:
+        - ansible_facts.os_family == 'RedHat'
+        - large_disk | default(false)
+        - "'database' in group_names"

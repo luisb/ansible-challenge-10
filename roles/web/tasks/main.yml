@@ -1,0 +1,11 @@
+- name: Install web server
+  ansible.builtin.dnf:
+    name: httpd
+    state: present
+  notify: restart httpd
+
+- name: Start httpd
+  ansible.builtin.service:
+    name: httpd
+    state: started
+    enabled: true
